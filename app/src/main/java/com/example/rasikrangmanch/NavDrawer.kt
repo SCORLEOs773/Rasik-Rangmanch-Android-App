@@ -36,7 +36,6 @@ fun NavDrawer(navController: NavController)
                 ) {
                     Text(text = "Drawer Item 1")
                     Text(text = "Drawer Item 2")
-                    // Add more items as needed
                 }
             }
         },

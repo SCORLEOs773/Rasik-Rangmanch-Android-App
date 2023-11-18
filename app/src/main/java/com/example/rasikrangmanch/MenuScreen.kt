@@ -1,36 +1,16 @@
 package com.example.rasikrangmanch
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-//import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +25,8 @@ import androidx.navigation.NavController
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuScreen(navController: NavController) {
-    val menuItems = getAuthenticIndianMenu()
+    var menuItems by remember { mutableStateOf(getAuthenticIndianMenu()) }
+    var searchPhrase by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -63,6 +44,25 @@ fun MenuScreen(navController: NavController) {
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Medium,
         )
+
+        OutlinedTextField(
+            value = searchPhrase,
+            onValueChange = { searchPhrase = it },
+            label = { Text("Search Menu") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 50.dp, end = 50.dp, bottom = 10.dp)
+        )
+
+        val filteredMenuItems = menuItems.mapValues { (_, items) ->
+            items.filter { menuItem ->
+                searchPhrase.split(" ").any { searchWord ->
+                    menuItem.name.contains(searchWord, ignoreCase = true)
+                }
+            }
+        }
+
+
         LazyColumn {
             menuItems.keys.forEach { category ->
                 item {
@@ -73,7 +73,7 @@ fun MenuScreen(navController: NavController) {
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-                items(menuItems[category] ?: emptyList()) { menuItem ->
+                items(filteredMenuItems[category] ?: emptyList()) { menuItem ->
                     Divider(
                         color = Color.Gray,
                         thickness = 1.dp,
@@ -84,6 +84,7 @@ fun MenuScreen(navController: NavController) {
             }
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -97,9 +98,9 @@ fun MenuScreen(navController: NavController) {
             containerColor = Color(0xFFF55B5B),
             contentColor = Color.White
         ) {
-            Row (
+            Row(
                 modifier = Modifier.padding(horizontal = 10.dp)
-            ){
+            ) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
                     contentDescription = "Proceed to Pay",
@@ -117,7 +118,6 @@ fun MenuScreen(navController: NavController) {
 
 @Composable
 fun MenuItem(item: MenuItem) {
-    val selectedItems = remember { mutableStateListOf<MenuItem>() }
     Row(
         modifier = Modifier.padding(16.dp)
     ) {
@@ -133,7 +133,7 @@ fun MenuItem(item: MenuItem) {
                     onDecrement = {
                         item.quantity--
                         if (item.quantity == 0) {
-                            selectedItems.remove(item)
+                            item.isSelected = false
                         }
                     }
                 )
@@ -146,7 +146,7 @@ fun MenuItem(item: MenuItem) {
                     ),
                     onClick = {
                         item.quantity++
-                        selectedItems.add(item)
+                        item.isSelected = true
                     }
                 ) {
                     Text("Add Item")
@@ -161,7 +161,6 @@ fun MenuItem(item: MenuItem) {
                 .width(120.dp)
                 .height(80.dp)
         )
-
     }
 }
 
@@ -185,13 +184,13 @@ fun QuantityCounter(
     }
 }
 
-
 data class MenuItem(
     val name: String,
     val description: String,
     val price: Double,
     val imageResourceId: Int,
-    var quantity: Int = 0
+    var quantity: Int = 0,
+    var isSelected: Boolean = false
 )
 
 fun getAuthenticIndianMenu(): Map<String, List<MenuItem>> {
@@ -232,4 +231,3 @@ fun getAuthenticIndianMenu(): Map<String, List<MenuItem>> {
     )
     return menuItems
 }
-
